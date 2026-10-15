@@ -3,7 +3,7 @@ import requests
 
 
 bot = telebot.TeleBot("8989728786:AAF1q1UIxRohhggAajo9TerlEU1Z5h4jaxA")
-
+bot.remove_webhook()
 API_URL = "https://api.majidapi.ir/instagram/download"
 
 
@@ -109,5 +109,5 @@ def instagram_downloader(message):
         )
 
 
-bot.remove_webhook()
+
 bot.infinity_polling(skip_pending=True)
