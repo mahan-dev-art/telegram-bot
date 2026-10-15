@@ -109,4 +109,5 @@ def instagram_downloader(message):
         )
 
 
-bot.polling()
+bot.remove_webhook()
+bot.infinity_polling(skip_pending=True)
