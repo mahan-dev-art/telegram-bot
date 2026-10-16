@@ -1,0 +1,9 @@
+
+version: 1
+type: worker
+
+build:
+  framework: auto
+
+run:
+  command: python bot.py
