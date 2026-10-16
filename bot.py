@@ -1,4 +1,4 @@
-
+import tmdbsimple as tmdb
 import os
 from io import BytesIO
 
@@ -11,6 +11,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 API_TOKEN = os.getenv("API_TOKEN")
+tmdb.API_KEY = os.getenv("TMDB_API_KEY")
 
 API_URL = "https://api.majidapi.ir/instagram/download"
 
@@ -33,11 +34,18 @@ def start_handler(message):
             callback_data="instagram_downloader"
         )
     )
+    
+    keyboard.add(
+        telebot.types.InlineKeyboardButton(
+            "جستجوی فیلم",
+            callback_data="movie_search"
+        )
+    )
 
     bot.send_message(
         message.chat.id,
         "سلام! 👋\n"
-        "برای دانلود ویدئوی اینستاگرام، دکمه زیر را انتخاب کن.",
+        "برای ادامه، یکی از گزینه‌های زیر را انتخاب کن:",
         reply_markup=keyboard
     )
 
@@ -53,6 +61,65 @@ def callback_handler(call):
         "🔗 لطفاً لینک پست یا ریلز اینستاگرام را ارسال کن."
     )
 
+@bot.callback_query_handler(
+    func=lambda call: call.data == "movie_search"
+)
+def movie_search_handler(call):
+    bot.answer_callback_query(call.id)
+
+    bot.send_message(
+        call.message.chat.id,
+        "🎬 لطفاً نام فیلم یا سریال مورد نظر را ارسال کن."
+    )
+    
+
+
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    if "instagram.com/" in message.text:
+        instagram_downloader(message)
+    else:
+        movie_search(message)
+
+
+@bot.message_handler(func=lambda message: True)
+def movie_search(message):
+    query = message.text.strip()
+    chat_id = message.chat.id
+
+    try:
+        search = tmdb.Search()
+        response = search.movie(query=query)
+
+        if not response.get("results"):
+            bot.send_message(
+                chat_id,
+                "❌ هیچ فیلم یا سریالی با این نام پیدا نشد."
+            )
+            return
+
+        results = response["results"][:5]  # Limit to top 5 results
+        result_texts = []
+
+        for result in results:
+            title = result.get("title", "نامشخص")
+            release_date = result.get("release_date", "نامشخص")
+            overview = result.get("overview", "بدون توضیح")
+            result_texts.append(
+                f"🎬 {title} ({release_date})\n{overview}\n"
+            )
+
+        bot.send_message(
+            chat_id,
+            "\n\n".join(result_texts)
+        )
+
+    except Exception as error:
+        print("TMDB API error:", repr(error))
+        bot.send_message(
+            chat_id,
+            "❌ هنگام جستجوی فیلم یا سریال خطایی رخ داد."
+        )
 
 @bot.message_handler(
     func=lambda message: (
